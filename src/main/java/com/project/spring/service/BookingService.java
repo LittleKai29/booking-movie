@@ -3,10 +3,13 @@ package com.project.spring.service;
 import com.project.spring.dto.request.BookingRequestDTO;
 import com.project.spring.dto.response.BookingResponseDTO;
 import com.project.spring.entity.*;
+import com.project.spring.kafka.KafkaProducerService;
 import com.project.spring.repository.BookingRepository;
 import com.project.spring.repository.ShowtimeRepository;
 import com.project.spring.repository.TicketRepository;
 import com.project.spring.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 @Service
 public class BookingService {
 
+    private final Logger logger = LoggerFactory.getLogger(BookingService.class);
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired
@@ -30,6 +34,8 @@ public class BookingService {
     private ShowtimeRepository showtimeRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private KafkaProducerService kafkaProducerService;
 
     @Transactional // Rất quan trọng: Đảm bảo tất cả các thao tác CSDL trong hàm này là một giao dịch
     public BookingResponseDTO createBooking(BookingRequestDTO requestDTO) {
@@ -83,7 +89,17 @@ public class BookingService {
         // 7. Lưu đơn đặt vé (do có cascade, các vé con cũng sẽ được lưu theo)
         Booking savedBooking = bookingRepository.save(booking);
 
-        // 8. Chuyển đổi sang DTO để trả về
+        // 8. GỬI MESSAGE TỚI KAFKA (Bước mới)
+        // Chúng ta sẽ gửi ID của booking vừa được lưu
+        try {
+            kafkaProducerService.sendMessage(savedBooking.getId().toString());
+        } catch (Exception e) {
+            // Ghi log nếu gửi message thất bại, nhưng không làm ảnh hưởng đến giao dịch chính
+            // Người dùng vẫn nhận được kết quả đặt vé thành công
+            logger.error("Failed to send booking notification to Kafka", e);
+        }
+
+        // 9. Chuyển đổi sang DTO để trả về
         return convertToResponseDto(savedBooking);
     }
 
