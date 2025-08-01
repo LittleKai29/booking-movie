@@ -1,10 +1,7 @@
 package com.project.spring.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -12,10 +9,12 @@ import java.math.BigDecimal;
 @Table(name = "tickets", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"showtime_id", "seat_number"})
 })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Ticket {
 
     @Id
@@ -23,6 +22,7 @@ public class Ticket {
     private Long id;
 
     @Column(nullable = false)
+    @EqualsAndHashCode.Include
     private String seatNumber;
 
     @Column(nullable = false)
@@ -34,5 +34,6 @@ public class Ticket {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "showtime_id", nullable = false)
+    @EqualsAndHashCode.Include
     private Showtime showtime;
 }

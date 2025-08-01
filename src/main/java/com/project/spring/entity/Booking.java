@@ -1,21 +1,21 @@
 package com.project.spring.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "bookings")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Booking {
 
     @Id
@@ -40,7 +40,12 @@ public class Booking {
 
     // Một Booking có nhiều Tickets
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
-    private Set<Ticket> tickets;
+    private Set<Ticket> tickets = new HashSet<>();
+
+    public void addTicket(Ticket ticket) {
+        tickets.add(ticket);
+        ticket.setBooking(this);
+    }
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
